@@ -3,4 +3,5 @@
 #![warn(missing_docs)]
 
 pub mod kv;
+pub mod lin;
 pub mod rng;
