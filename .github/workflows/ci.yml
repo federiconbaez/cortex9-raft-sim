@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
+      - run: cargo test --release
+
+  seeds:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --release
+      - name: Correct Raft, default faults (5000 seeds)
+        run: ./target/release/cortex9-raft-sim --seeds 5000
+      - name: Correct Raft, crash-heavy 3 nodes (3000 seeds)
+        run: ./target/release/cortex9-raft-sim --seeds 3000 --nodes 3 --crash-rate 0.002 --down-max 200
+      - name: Negative controls (each must be caught)
+        run: |
+          ./target/release/cortex9-raft-sim --seeds 200 --bug stale-reads --expect-failure
+          ./target/release/cortex9-raft-sim --seeds 500 --nodes 3 --crash-rate 0.002 --down-max 200 --bug forget-vote --expect-failure
+          ./target/release/cortex9-raft-sim --seeds 50 --bug short-quorum --expect-failure 2>/dev/null
+
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.75
+      - run: cargo build --locked
