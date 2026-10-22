@@ -1,0 +1,13 @@
+[package]
+name = "cortex9-raft-sim"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "Apache-2.0"
+description = "Raft (election, replication, snapshots) under deterministic simulation with a Porcupine-style linearizability checker"
+repository = "https://github.com/federiconbaez/cortex9-raft-sim"
+
+[dependencies]
+
+[profile.release]
+debug = 1
